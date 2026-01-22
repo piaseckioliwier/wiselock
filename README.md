@@ -1,8 +1,8 @@
 # WiseLock
 
-CLI do tworzenia i refaktoryzacji **pełnych, dużych zmian** w repozytorium — **wraz z testami**.
+A CLI for creating and refactoring **full, large-scale changes** in a repository — **including tests**.
 
-`wiselock` bierze Twoje zadanie (jedna linia), zbiera kontekst z repo, prosi model(e) o wygenerowanie **diffa/patcha**, opcjonalnie przeprowadza **review diffa**, a potem (jeśli chcesz) **aplikuje zmiany** i **uruchamia testy**.
+`wiselock` takes your task (one line), gathers context from the repo, asks model(s) to generate a **diff/patch**, optionally performs a **diff review**, and then (if you want) **applies the changes** and **runs tests**.
 
 ```bash
 wiselock "Add request validation to /users" \
@@ -13,31 +13,31 @@ wiselock "Add request validation to /users" \
 
 ---
 
-## Dlaczego to ma sens
+## Why this makes sense
 
-W realnych projektach najtrudniejsze nie jest „napisanie kilku linii”, tylko:
+In real-world projects, the hardest part is not “writing a few lines”, but:
 
-- zebranie odpowiedniego kontekstu (gdzie to zmienić, co jest powiązane),
-- utrzymanie spójności w wielu plikach,
-- zmiany bez łamania kontraktów i edge-case’ów,
-- dopilnowanie testów.
+- gathering the right context (where to change things, what is related),
+- maintaining consistency across multiple files,
+- making changes without breaking contracts and edge cases,
+- ensuring tests are handled properly.
 
-`wiselock` porządkuje ten proces w powtarzalny pipeline.
+`wiselock` structures this process into a repeatable pipeline.
 
 ---
 
 ## MVP (CLI)
 
-MVP to jedno polecenie, które robi:
+The MVP is a single command that:
 
-1. **zbiera kontekst repo**
-2. **buduje prompt**
-3. **woła API**
-4. **zapisuje diff (patch)**
-5. **git apply** (opcjonalnie)
-6. **testy** (opcjonalnie)
+1. **collects repository context**
+2. **builds a prompt**
+3. **calls the API**
+4. **writes a diff (patch)**
+5. **git apply** (optional)
+6. **runs tests** (optional)
 
-Przykład:
+Example:
 
 ```bash
 wiselock "Add request validation to /users" \
@@ -46,57 +46,57 @@ wiselock "Add request validation to /users" \
   --run-tests
 ```
 
-### Tryb interaktywny (następny krok, opcjonalnie)
+### Interactive mode (next step, optional)
 
 ```bash
 wiselock "Add validation to /users" --interactive
 ```
 
-Wtedy narzędzie:
+In this mode, the tool:
 
-- generuje patch,
-- pokazuje diff,
-- pyta:
+- generates a patch,
+- shows the diff,
+- asks:
 
 ```text
 Apply changes? [y/N]
 ```
 
-Domyślnie w trybie nieinteraktywnym rekomendowane jest zachowanie „bezpieczne” (dry-run) i wymaganie jawnego `--apply`.
+By default, in non-interactive mode, a “safe” behavior (dry-run) is recommended, requiring an explicit `--apply`.
 
 ---
 
-## Kluczowy detal: rozdzielenie „tworzenia” od „oceny”
+## Key detail: separating “creation” from “evaluation”
 
-To jedna z najważniejszych zasad w tym podejściu:
+This is one of the most important principles of this approach:
 
-- **Prompt A (generator):** generuje diff/patch
-- **Prompt B (reviewer):** krytycznie ocenia diff/patch
+- **Prompt A (generator):** generates the diff/patch
+- **Prompt B (reviewer):** critically evaluates the diff/patch
 
-Korzyści:
+Benefits:
 
-- model nie „broni” własnych decyzji (mniej confirmation bias),
-- dostajesz inny tryb myślenia (kreatywny vs sceptyczny),
-- łatwiej ustawić automatyczne reguły: co zaakceptować, co zablokować.
+- the model does not “defend” its own decisions (less confirmation bias),
+- you get a different thinking mode (creative vs. skeptical),
+- it is easier to define automatic rules: what to accept, what to block.
 
-### Review musi dostać: diff + oryginalne zadanie
+### The review must receive: the diff + the original task
 
-Review bez zadania jest praktycznie bezsensowne („czy kod jest ładny?”).
-Dopiero razem z zadaniem reviewer może sprawdzić:
+A review without the task is practically meaningless (“is the code pretty?”).
+Only together with the task can the reviewer check:
 
-- czy zmiana realizuje wymagania,
-- czy nie robi za dużo,
-- czy nie zmienia kontraktów/public API,
-- czy nie psuje edge-case’ów,
-- czy testy pokrywają krytyczne ścieżki.
+- whether the change fulfills the requirements,
+- whether it does too much,
+- whether it changes contracts / public APIs,
+- whether it breaks edge cases,
+- whether tests cover critical paths.
 
 ---
 
-## Format odpowiedzi z review (3 części)
+## Review response format (3 parts)
 
-Review prompt powinien zwracać stabilny, maszynowo-parsowalny format.
+The review prompt should return a stable, machine-parseable format.
 
-### 1) Verdict (enum, nie skala)
+### 1) Verdict (enum, not a scale)
 
 ```text
 VERDICT:
@@ -105,11 +105,11 @@ VERDICT:
 - REJECT
 ```
 
-Enum jest stabilniejszy niż liczby/oceny, łatwiej go użyć jako gate.
+An enum is more stable than scores, and easier to use as a gate.
 
-### 2) Risk assessment (konkret!)
+### 2) Risk assessment (concrete!)
 
-Przykład:
+Example:
 
 ```text
 RISKS:
@@ -118,15 +118,15 @@ RISKS:
 - [LOW] Minor style inconsistency
 ```
 
-### 3) Confidence score (opcjonalnie, pomocniczo)
+### 3) Confidence score (optional, auxiliary)
 
 ```text
 CONFIDENCE: 0.82
 ```
 
-To nie musi być „blokada”, raczej sygnał diagnostyczny.
+This does not have to be a “blocker”, more of a diagnostic signal.
 
-### Rekomendowany minimalny payload (przykład JSON)
+### Recommended minimal payload (example JSON)
 
 ```json
 {
@@ -146,9 +146,9 @@ To nie musi być „blokada”, raczej sygnał diagnostyczny.
 
 ---
 
-## Flow w CLI (praktycznie)
+## CLI flow (practically)
 
-Domyślny pipeline:
+Default pipeline:
 
 ```text
 wiselock "Add validation to /users"
@@ -162,18 +162,18 @@ wiselock "Add validation to /users"
 [apply?] → [run tests?]
 ```
 
-Zasada: **użyj innego prompta / stylu do review niż do generowania**.
+Rule: **use a different prompt / style for review than for generation**.
 
-- Generator: kreatywny, skupiony na rozwiązaniu
-- Reviewer: sceptyczny, defensywny, „paranoiczny”, jak security/staff engineer
+- Generator: creative, solution-focused
+- Reviewer: skeptical, defensive, “paranoid”, like a security/staff engineer
 
 ---
 
-## Wybór modeli i „custom per task”
+## Model selection and “custom per task”
 
-Założenie: różne etapy mogą używać różnych modeli (i różnych dostawców).
+Assumption: different stages may use different models (and different providers).
 
-Przykładowe flagi (docelowo):
+Example flags (future):
 
 ```bash
 wiselock "..." \
@@ -182,141 +182,141 @@ wiselock "..." \
   --apply
 ```
 
-Oraz profile, np.:
+And profiles, e.g.:
 
-- `--profile fast` – jeden model, minimalny kontekst, bez review
-- `--profile safe` – generate + review, bez auto-apply
-- `--profile paranoid` – generate + review + test plan + testy, ścisłe gate’y
-
----
-
-## Dokładny plan (multi-model workflow)
-
-Proponowany „pełny” przepływ:
-
-1. **GPT-5.2** robi plan
-2. **Claude** robi *peer review* planu i poprawia
-3. **Claude** implementuje
-4. **GPT-5.2** robi finalny review kodu + szuka ukrytych bugów
-
-Dlaczego to działa:
-
-- rozdzielasz role (planowanie vs implementacja vs audyt),
-- peer review planu łapie nieporozumienia zanim powstanie kod,
-- final review od innego modelu zwiększa szanse wykrycia subtelnych regresji.
+- `--profile fast` – one model, minimal context, no review
+- `--profile safe` – generate + review, no auto-apply
+- `--profile paranoid` – generate + review + test plan + tests, strict gates
 
 ---
 
-## Testy (przyszłość) – sugerowany workflow
+## Detailed plan (multi-model workflow)
 
-Dalszy etap: osobny pipeline pod testy.
+Proposed “full” flow:
 
-- **GPT-5.2 Pro** decyduje *co testować* (minimum sensowne), wskazuje ryzykowne miejsca.
-- **Claude Opus 4.5** pisze konkretne testy (szybko, bez lania wody).
+1. **GPT-5.2** creates a plan
+2. **Claude** performs a *peer review* of the plan and improves it
+3. **Claude** implements
+4. **GPT-5.2** performs a final code review and looks for hidden bugs
 
-Takie rozdzielenie bywa bardzo skuteczne, bo „co testować” wymaga priorytetyzacji i myślenia ryzykiem, a samo pisanie testów to często ciężka, mechaniczna praca.
+Why this works:
 
-### Piramida testów (orientacyjnie)
+- roles are separated (planning vs. implementation vs. audit),
+- peer review of the plan catches misunderstandings before code is written,
+- final review by a different model increases the chance of catching subtle regressions.
+
+---
+
+## Tests (future) – suggested workflow
+
+Next stage: a separate pipeline for tests.
+
+- **GPT-5.2 Pro** decides *what to test* (minimum sensible set), identifies risky areas.
+- **Claude Opus 4.5** writes the actual tests (fast, no fluff).
+
+This separation is often very effective, because “what to test” requires prioritization and risk-based thinking, while writing tests is often heavy, mechanical work.
+
+### Test pyramid (approximate)
 
 ```text
-                ┌──────────────┐   ← bardzo mało (1–8%)
+                ┌──────────────┐   ← very few (1–8%)
                 │   E2E / UI   │
            ┌────┴──────────────┴────┐
-           │  Kontraktowe / Komponentowe  │   ← 10–20%
+           │ Contract / Component   │   ← 10–20%
       ┌────┴────────────────────────────┴────┐
-      │          Integracyjne                 │
-┌─────┴───────────────────────────────────────┴─────┐   ← najwięcej (60–85%)
-│              Unit / komponentowe                  │
+      │          Integration                 │
+┌─────┴───────────────────────────────────────┴─────┐   ← most (60–85%)
+│            Unit / component-level                  │
 └────────────────────────────────────────────────────┘
 ```
 
-W skrócie:
+In short:
 
-- większość wartości daje szybka warstwa unit/komponentowa,
-- integracyjne pilnują kleju i realnych zależności,
-- kontrakty chronią API i boundary,
-- E2E/UI tylko tam, gdzie najbardziej boli regresja.
+- most value comes from fast unit/component tests,
+- integration tests guard the glue and real dependencies,
+- contract tests protect APIs and boundaries,
+- E2E/UI only where regressions hurt the most.
 
 ---
 
-## Jak `wiselock` działa „pod spodem”
+## How `wiselock` works “under the hood”
 
-### 1) Zbieranie kontekstu repo
+### 1) Repository context collection
 
-Cel: podać modelowi **tylko to, co potrzebne**, w ramach budżetu tokenów.
+Goal: provide the model with **only what is needed**, within the token budget.
 
-Typowe źródła kontekstu:
+Typical context sources:
 
-- struktura repo (drzewo katalogów),
-- metadane: język, framework, package manager, test runner,
-- pliki kluczowe (np. routery, kontrolery, schematy, modele),
-- grep/ripgrep po endpointach/nazwach,
-- zależności (importy, moduły powiązane),
-- istniejące testy w okolicy zmiany,
-- konwencje (lint/format, styleguide, error handling).
+- repository structure (directory tree),
+- metadata: language, framework, package manager, test runner,
+- key files (e.g. routers, controllers, schemas, models),
+- grep/ripgrep for endpoints/names,
+- dependencies (imports, related modules),
+- existing tests near the change,
+- conventions (lint/format, styleguide, error handling).
 
-Docelowo: tryby kontekstu, np. `smart` (wycina tylko relevant), `full` (większy kontekst), `custom` (include/exclude globs).
+Eventually: context modes, e.g. `smart` (only relevant), `full` (larger context), `custom` (include/exclude globs).
 
-### 2) Budowanie prompta
+### 2) Prompt construction
 
-W praktyce: prompt to „pakiet” składający się z:
+In practice, a prompt is a “bundle” consisting of:
 
-- opisu zadania (Twoje polecenie),
-- kontekstu repo (wybrane fragmenty),
-- instrukcji formatu wyjścia (patch unified diff),
-- ograniczeń (nie dotykaj X, zachowaj kontrakt Y, styl Z),
-- wymagań dot. testów (jeśli włączone).
+- task description (your command),
+- repository context (selected fragments),
+- output format instructions (unified diff patch),
+- constraints (do not touch X, preserve contract Y, style Z),
+- test requirements (if enabled).
 
-### 3) Wołanie API
+### 3) API calls
 
-Warstwa „adapterów” per provider/model:
+An adapter layer per provider/model:
 
 - OpenAI
 - Anthropic
-- (w przyszłości) inne
+- (future) others
 
-### 4) Zapis patcha
+### 4) Patch persistence
 
-- patch zapisany do pliku (audyt, reprodukcja),
-- metadane: model, hash kontekstu, czas, parametry.
+- patch saved to a file (audit, reproducibility),
+- metadata: model, context hash, time, parameters.
 
-### 5) Aplikacja zmian
+### 5) Applying changes
 
-- preferowane: `git apply` (czysto, odwracalnie)
-- opcjonalnie: `git apply --check` przed właściwą aplikacją
+- preferred: `git apply` (clean, reversible)
+- optionally: `git apply --check` before actual application
 
-### 6) Uruchomienie testów
+### 6) Running tests
 
-- uruchamiane tylko na żądanie (`--run-tests`) lub w profilu,
-- konfigurowalne komendą (`--test-command "..."`).
-
----
-
-## Decyzje i gate’y
-
-Przykładowa logika decyzji po review:
-
-- `APPROVE` → można auto-apply (jeśli `--apply`/profil na to pozwala)
-- `APPROVE_WITH_WARNINGS` → pokaż ostrzeżenia, preferuj tryb interaktywny
-- `REJECT` → nie aplikuj; wyświetl powody i sugerowane poprawki
-
-Dodatkowe gate’y (opcjonalnie):
-
-- blokuj auto-apply przy `[HIGH]` risk,
-- wymagaj testów przy zmianach w krytycznych katalogach (np. auth, payments),
-- wymagaj czystego `git diff --check`.
+- executed only on demand (`--run-tests`) or via profile,
+- configurable via command (`--test-command "..."`).
 
 ---
 
-## Konfiguracja
+## Decisions and gates
 
-Docelowe źródła konfiguracji (od najwyższego priorytetu):
+Example decision logic after review:
 
-1. flagi CLI
+- `APPROVE` → auto-apply allowed (if `--apply`/profile permits)
+- `APPROVE_WITH_WARNINGS` → show warnings, prefer interactive mode
+- `REJECT` → do not apply; display reasons and suggested fixes
+
+Additional gates (optional):
+
+- block auto-apply on `[HIGH]` risk,
+- require tests for changes in critical directories (e.g. auth, payments),
+- require clean `git diff --check`.
+
+---
+
+## Configuration
+
+Target configuration sources (highest priority first):
+
+1. CLI flags
 2. `.wiselock.yml` (per repo)
-3. zmienne środowiskowe (API keys, default provider)
+3. environment variables (API keys, default provider)
 
-Przykład (koncepcyjnie):
+Example (conceptual):
 
 ```yaml
 profile: safe
@@ -338,43 +338,24 @@ tests:
 
 ---
 
-## Bezpieczeństwo i higiena
+## Security and hygiene
 
-Zalecenia projektowe (guardrails):
+Recommended design guardrails:
 
-- **domyślnie nie aplikuj zmian** bez `--apply` (albo bez potwierdzenia w `--interactive`),
-- loguj dokładnie: patch, parametry, verdict review,
-- limity na rozmiar kontekstu i liczbę plików,
-- wyraźne rozróżnienie: „generator” nie uruchamia komend, tylko produkuje patch,
-- test runner uruchamia tylko komendy z config/flag (brak „dowolnej egzekucji” z outputu modelu).
+- **do not apply changes by default** without `--apply` (or confirmation in `--interactive`),
+- log everything clearly: patch, parameters, review verdict,
+- limits on context size and number of files,
+- clear separation: the “generator” never runs commands, it only produces a patch,
+- test runner executes only commands from config/flags (no “arbitrary execution” from model output).
 
 ---
 
 ## Roadmap
 
-- `--interactive` z wygodnym viewerem diffa
-- profile i polityki gate’ów
-- automatyczna pętla naprawcza:
-  - testy fail → streszczenie błędów → poprawka patcha → ponowny review → retry
-- lepsze „smart context” (ranking plików po relewancji)
-- integracja z CI (komentarze do PR / check run)
-- wsparcie dla monorepo i wielu runnerów testów
-
----
-
-## Kontrybucje
-
-Ten repozytorium ma być praktyczne: prosty core, a reszta jako moduły (provider adapters, UI, profiles).
-
-Jeśli chcesz pomóc:
-
-- dodaj adapter do kolejnego providera,
-- dopracuj heurystyki kontekstu,
-- zaproponuj format review, który lepiej się parsuje i jest bardziej stabilny,
-- dodaj przykładowe profile dla popularnych stacków.
-
----
-
-## Licencja
-
-Do ustalenia (np. MIT/Apache-2.0).
+- `--interactive` with a convenient diff viewer
+- profiles and gate policies
+- automatic repair loop:
+  - tests fail → summarize errors → patch fix → re-review → retry
+- better “smart context” (file relevance ranking)
+- CI integration (PR comments / check runs)
+- support for monorepos and multiple test runners
